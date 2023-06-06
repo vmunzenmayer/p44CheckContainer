@@ -46,8 +46,10 @@ func main() {
 	}
 
 	rowNum := 1
-	result.SetCellValue(sheetName, fmt.Sprint("A", rowNum), "CONTENEDOR")
-	result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), "¿DATOS EN P44?")
+	result.SetCellValue(sheetName, fmt.Sprint("A", rowNum), "NUMERO ORDEN")
+	result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), "CONTENEDOR")
+	result.SetCellValue(sheetName, fmt.Sprint("C", rowNum), "NAVIERA")
+	result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "¿DATOS EN P44?")
 
 	for _, row := range rows[1:] {
 		//fmt.Println(row[1], "\t")
@@ -79,12 +81,14 @@ func main() {
 
 		rowNum++
 		// Set value of a cell.
-		result.SetCellValue(sheetName, fmt.Sprint("A", rowNum), row[1])
+		result.SetCellValue(sheetName, fmt.Sprint("A", rowNum), row[0])
+		result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), row[1])
+		result.SetCellValue(sheetName, fmt.Sprint("C", rowNum), row[2])
 
 		if len(responseObject.Data) == 0 {
-			result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), "NO")
+			result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "NO")
 		} else {
-			result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), "SI")
+			result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "SI")
 		}
 	}
 
