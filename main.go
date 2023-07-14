@@ -4,16 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/vmunzenmayer/p44CheckContainer/models"
 	"github.com/xuri/excelize/v2"
 )
 
 func main() {
-	url := "https://api.clearmetal.com/v1/trips?equipment_numbers="
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	url := os.Getenv("P44_URL")
 	method := "GET"
-	token := "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2ODI2NzQzNTMsIm5iZiI6MTY4MjY3NDM1MywianRpIjoiYzc1ODU3OTItZDY1NC00NzQyLWI3NWUtMDFkOTEwY2U2MDhjIiwiZXhwIjoyMjAxMDc0MzUzLCJpZGVudGl0eSI6eyJ2ZXJzaW9uIjoxLCJ1c2VyIjoiY21wY19hcGlfdXNlckBjbGVhcm1ldGFsLmNvbSIsInVzZXJfaWQiOm51bGwsInRlbmFudCI6ImNtcGMiLCJhY2NvdW50X3R5cGUiOiJhcGlfdXNlciIsInN1Yl90ZW5hbnRzIjpbXSwiY2FuX2ltcGVyc29uYXRlIjpmYWxzZSwiaWdub3JlX3VzZXJfYWNjZXNzX3Jlc3RyaWN0aW9ucyI6ZmFsc2V9LCJmcmVzaCI6ZmFsc2UsInR5cGUiOiJhY2Nlc3MiLCJjc3JmIjoiZDM1YjNmZTQtZmQ3Yi00YWZiLTliZmItZDk2YmUzNWFlMTMyIn0.6oG-0d5G9bgi82qeWSgjsS3lfJh9MOHhqpDX1fHByuI"
+	token := os.Getenv("P44_TOKEN")
 
 	containers, err := excelize.OpenFile("containers.xlsx")
 
@@ -23,7 +32,6 @@ func main() {
 	}
 
 	defer func() {
-		// Close the spreadsheet.
 		if err := containers.Close(); err != nil {
 			fmt.Println(err)
 		}
@@ -38,7 +46,6 @@ func main() {
 		}
 	}()
 
-	// Get all the rows in the Hoja1.
 	rows, err := containers.GetRows("Hoja1")
 	if err != nil {
 		fmt.Println(err)
@@ -49,10 +56,11 @@ func main() {
 	result.SetCellValue(sheetName, fmt.Sprint("A", rowNum), "NUMERO ORDEN")
 	result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), "CONTENEDOR")
 	result.SetCellValue(sheetName, fmt.Sprint("C", rowNum), "NAVIERA")
-	result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "¿DATOS EN P44?")
+	result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "PUERTO ORIGEN")
+	result.SetCellValue(sheetName, fmt.Sprint("E", rowNum), "PUERTO DESTINO")
+	result.SetCellValue(sheetName, fmt.Sprint("F", rowNum), "¿DATOS EN P44?")
 
 	for _, row := range rows[1:] {
-		//fmt.Println(row[1], "\t")
 		urlContainer := url + row[1]
 		client := &http.Client{}
 		req, err := http.NewRequest(method, urlContainer, nil)
@@ -77,23 +85,22 @@ func main() {
 		}
 		var responseObject models.Response
 		json.Unmarshal(body, &responseObject)
-		//fmt.Println(responseObject.Data)
 
 		rowNum++
-		// Set value of a cell.
 		result.SetCellValue(sheetName, fmt.Sprint("A", rowNum), row[0])
 		result.SetCellValue(sheetName, fmt.Sprint("B", rowNum), row[1])
 		result.SetCellValue(sheetName, fmt.Sprint("C", rowNum), row[2])
+		result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), row[3])
+		result.SetCellValue(sheetName, fmt.Sprint("E", rowNum), row[4])
 
 		if len(responseObject.Data) == 0 {
-			result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "NO")
+			result.SetCellValue(sheetName, fmt.Sprint("F", rowNum), "NO")
 		} else {
-			result.SetCellValue(sheetName, fmt.Sprint("D", rowNum), "SI")
+			result.SetCellValue(sheetName, fmt.Sprint("F", rowNum), "SI")
 		}
-	}
 
-	// Save spreadsheet by the given path.
-	if err := result.SaveAs("result.xlsx"); err != nil {
-		fmt.Println(err)
+		if err := result.SaveAs("result.xlsx"); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
